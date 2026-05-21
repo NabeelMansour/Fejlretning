@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Letbanen Fejlretning - App</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        header p {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .search-box {
+            padding: 15px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+        }
+
+        .view {
+            display: none;
+        }
+
+        .view.active {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .error-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .error-item {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .error-item:active {
+            transform: scale(0.98);
+        }
+
+        .error-item:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        }
+
+        .error-item .error-type {
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 5px;
+            font-size: 16px;
+        }
+
+        .error-item .error-desc {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.4;
+        }
+
+        .error-item .error-category {
+            display: inline-block;
+            background: #f0f0f0;
+            color: #333;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-top: 8px;
+            font-weight: 500;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+
+        .no-results-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .detail-view {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .detail-header {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .detail-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .detail-category {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .detail-section {
+            margin-bottom: 25px;
+        }
+
+        .detail-section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 8px;
+        }
+
+        .detail-content {
+            font-size: 15px;
+            color: #555;
+            line-height: 1.6;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .back-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+            width: 100%;
+            font-weight: 600;
+        }
+
+        .back-btn:active {
+            transform: scale(0.98);
+            background: #764ba2;
+        }
+
+        .stats {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .stats strong {
+            color: #667eea;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                border-radius: 0;
+                box-shadow: none;
+            }
+
+            header h1 {
+                font-size: 20px;
+            }
+
+            .detail-section-title {
+                font-size: 16px;
+            }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+        .empty-state-text {
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+
+        .status-badge.afsluttet {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-badge.afventer {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-badge.not-started {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚊 Letbanen Fejlretning</h1>
+            <p>Søg efter fejltyper og se løsninger</p>
+        </header>
+
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Søg efter fejltype, beskrivelse...">
+            <div class="stats">
+                Viser: <strong id="resultCount">0</strong> fejl(e)
+            </div>
+        </div>
+
+        <div class="content">
+            <!-- LIST VIEW -->
+            <div id="listView" class="view active">
+                <div class="error-list" id="errorList"></div>
+                <div id="emptyState" class="no-results" style="display: none;">
+                    <div class="no-results-icon">🔍</div>
+                    <p>Ingen fejl fundet. Prøv at søge igen.</p>
+                </div>
+            </div>
+
+            <!-- DETAIL VIEW -->
+            <div id="detailView" class="view">
+                <button class="back-btn" onclick="app.backToList()">← Tilbage til liste</button>
+                <div id="detailContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const app = {
+            errors: [],
+            filteredErrors: [],
+            currentDetail: null,
+
+            init() {
+                this.loadData();
+                this.setupEventListeners();
+                this.render();
+            },
+
+            loadData() {
+                this.errors = [
+                    { date: "21-05-2026", time: "07:01", type: "Besættlsesfejl på trackcircet EETC06 på entry/exit", category: "Trackcircet", desc: "Besættlsesfejl på trackcircet EETC06 på entry/exit", action: "Forsøger at lave et normalt reset af tracon moduelt, men bliver mødt af \"EER 2210\". Ender med at auto-resette modulet + nøglereset hvilket løser problemet.", status: "Afsluttet" },
+                    { date: "20-05-2026", time: "20:33", type: "Besættlsesfejl på trackcircet G2TC16 på Glostrup bakke", category: "Trackcircet", desc: "Besættlsesfejl på trackcircet G2TC16 på Glostrup bakke", action: "Tracon modul G2TC16 melder falsk besættelse på Glostrup bakke. Laver et standard reset + nøgle-reset og besættelsen forsvinder igen.", status: "Afsluttet" },
+                    { date: "20-05-2026", time: "17:15", type: "Fjel på enkelt DOT skærm på Glostrup St.", category: "DOT skærm", desc: "Fjel på enkelt DOT skærm på Glostrup St, kommer med fejbesked \"Your remote installation code is: Naomi-1189\"", action: "Kontakter først Codeex der ikke kan se nogen fejl på deres porte. Kører til Glostrup og genstarter skærmen, men samme fejlkode kommer tilbage.", status: "ikke afsluttet" },
+                    { date: "20-05-2026", time: "16:17", type: "Fejl på signal D2S03 i spor 10 på CMC", category: "Signalanlæg", desc: "Fejl på signal D2S03 i spor 10 på CMC", action: "Kan løses med et nøgle-reset, men OCC klager over at dette er en tilbagevendende fejl. Jeg aftaler at de skal kontakte os hver gang det sker så vi kan tage log/data og sende til Tyskland.", status: "Afsluttet" },
+                    { date: "20-05-2026", time: "15:37", type: "Fejl på signal D2S03 i spor 10 på CMC", category: "Signalanlæg", desc: "Fejl på signal D2S03 i spor 10 på CMC", action: "Kan løses med et nøgle-reset, men OCC klager over at dette er en tilbagevendende fejl. Jeg aftaler at de skal kontakte os hver gang det sker så vi kan tage log/data og sende til Tyskland.", status: "Afsluttet" },
+                    { date: "20-05-2026", time: "13:04", type: "Fejl på signal D2S03 i spor 10 på CMC", category: "Signalanlæg", desc: "Fejl på signal D2S03 i spor 10 på CMC", action: "Kan løses med et nøgle-reset, men OCC klager over at dette er en tilbagevendende fejl. Jeg aftaler at de skal kontakte os hver gang det sker så vi kan tage log/data og sende til Tyskland.", status: "Afsluttet" },
+                    { date: "19-05-2026", time: "23:48", type: "Det er ikke muligt at trække tog ind og ud med IVU fra CMC", category: "IVU/RRM", desc: "Det er ikke muligt at trække tog ind og ud med IVU fra CMC", action: "Genstarter RRM og det bliver muligt at trække tog ind og ud med IVU igen.", status: "Afsluttet" },
+                    { date: "19-05-2026", time: "16:58", type: "Fejl i IXL skab D4 på CMC", category: "Signalanlæg", desc: "Failsafe modul A11.6/A31.3-A31.6 blinker rødt i D4 skabet på CMC. OCC nøgleresetter sig ud af det, men samme fejl vender tilbage efter en time.", action: "Master-resetter PLC'en i D2 skabet og høre ikke mere.", status: "Afsluttet" },
+                    { date: "19-05-2026", time: "06:41", type: "Det er ikke muligt at trække tog ind og ud med IVU fra CMC", category: "IVU/RRM", desc: "Det er ikke muligt at trække tog ind og ud med IVU fra CMC", action: "Vi starter med at prøve at genstarte alle services/servere der har med IVU-fleet at gøre uden held. Vi escalerer til IVU i Tyskland, som kunne se at IVU ikke modtog de rigtige pakker fra RMM.", status: "Afsluttet" },
+                    { date: "18-05-2026", time: "15:51", type: "Hele Glostrup banegård blinker rødt i RRM", category: "Signalanlæg", desc: "Hele Glostrup banegård blinker rødt i RRM. De kan nøgle-resettte sig ud af det, men det skete 2 ganage inden for 5 min, så OCC ønsker et PLC-masterreset", action: "Kører til Glostrup og masterresetter. Hører intet derefter.", status: "Afsluttet" },
+                    { date: "18-05-2026", time: "11:46", type: "Besættelsesfejl ved entry/exit", category: "Signalanlæg", desc: "Besættelsesfejl ved entry/exit. RRM viste at der var en besættelse i trackcircet 08, men tracon modulet viste igenting, og det holdet intet i sporet.", action: "Almindeligt nøgle-reset virkede ikke. Et PLC-masterreset efterfulgt af nøgle-reset løste problemet.", status: "Afsluttet" },
+                    { date: "18-05-2026", time: "10:18", type: "Kamera på Krikebjerk st. kommer ikke online after genstart af Switch", category: "CCTV/VMS", desc: "Kamera på Krikebjerk st. kommer ikke online after genstart af Switch", action: "Jeg prøver at genstarte VMS_CORE uden held, så jeg får fat i Siemens Infrakstruktur på 70212222, som opretter en sag på problemet. Ca en time senere ringer OCC og meddeler at alle kamera på Krikebjerg fungere igen.", status: "Afsluttet" },
+                    { date: "18-05-2026", time: "09:03", type: "Ingen forbindelse til Krikebjerg station", category: "Station", desc: "Switchen på Kirkebjerg station havde ingen forbindesle til omverden eller sit eget udstyr.", action: "Genstart switchen med Codeex i røret og de fleste systemer kommmer online igen.", status: "Afsluttet" },
+                    { date: "08-05-2026", time: "19:20", type: "Glostrup - Kan ikke gennemføre reset", category: "IXL", desc: "Jonas (OCC) de kan ikke resette IXL på Glostrup station", action: "", status: "" },
+                    { date: "08-05-2026", time: "08:15", type: "Spor 10 Signal D2S03 melder Forbi-kørsel", category: "IXL", desc: "Flere gange har man oplevet at få alarm fra signal D2S03 ved udtræk af tog fra spor 10, selvom man IKKE har kørt over for rødt.", action: "Kan se i RRM-eventlog at der starter et Route Request forløb som ender i ERROR i forbindelse med Overkørsel ved signal D2S03. Årsag endnu ukendt. OCC udfører reset selv på IXL skab indenfor hegnet.", status: "Ej afsluttet" },
+                    { date: "08-05-2026", time: "08:00", type: "CMC pull in/out", category: "Signalanlæg", desc: "CMC pull in/out virker ikke. Der kan ikke sættes router ud og ind af CMC", action: "Fejlen skyldes falsk besættelse TC02 i EE. Besættelsen kunne ikke ses i IXL. Efter genstart af IXL blev besættelsen synlig. TC02 blev resat i Tracon", status: "Afsluttet" },
+                    { date: "07-05-2026", time: "13:05", type: "IXL på CMC - alt blinker", category: "IXL", desc: "Alt blinker rødt på CMC, man har prøvet at udføre nøgle-reset et par gange uden succes", action: "Foreslår at OCC sender en person ned og udføre reset igen, og samtidig kører vi til CMC for at hjælpe. Da jeg ankommer til IXL-skabet for CMC (udenfor hegnet) så står Jorge og Nabil der allerede.", status: "Afsluttet" },
+                    { date: "07-05-2026", time: "09:25", type: "Glostrup TC14 viser falsk besættelse", category: "TC", desc: "TC14 viser besat selvom der ikke er noget tog der. Togdrift sat på pause.", action: "Tracon TC14 modul i IXL skab viser IKKE besættelse. Beslutter at dreje \"reset\" nøglen i skabet. Dette fjerner den falske besættelse, men til gengæld melder OCC at IXL-billedet bliver gråt for Glostrup.", status: "Afsluttet" },
+                    { date: "04-05-2026", time: "15:45", type: "Lyskryds problemer ved BrøndbyVester station", category: "Signalanlæg", desc: "Lyskryds problemer ved BrøndbyVester station. LRV får ikke prioritet.....", action: "Henviser OCC til ITS.", status: "Afsluttet" },
+                    { date: "28-04-2026", time: "04:15", type: "Kan ikke logge ind i IVU", category: "IVU", desc: "10.72.2.15 Oracle server var ophørt med at fungere, og kunne ikke pinges.", action: "Efter at have kontaktet Codex fik de gang i den igen, og så blev vejlledingen til at starte IVU igen fulgt.", status: "Afsluttet" },
+                    { date: "24-04-2026", time: "16:30", type: "CMC pull in/out", category: "Signalanlæg", desc: "CMC pull in/out virker ikke. Der kan ikke sættes router ud og ind af CMC", action: "Fejlen skyldes falsk besættelse TC02 i EE. Besættelsen kunne ikke ses i IXL. Efter genstart af IXL blev besættelsen synlig. TC02 blev resat i Tracon", status: "Afsluttet" },
+                    { date: "24-04-2026", time: "14:26", type: "Glostrup GL2TC16/GL2TC14", category: "TC", desc: "Falsk besættelse", action: "Personalet fik selv styr på det. Alt så normalt ud i skabet ved stationen. Lågen ud mod sporet var ikke låst.", status: "Afsluttet" },
+                    { date: "24-04-2026", time: "04:24", type: "Kan ikke logge ind i IVU", category: "IVU", desc: "Det var ikke muligt at logge ind i IVU, og login billedet var helt gråt, og under billedet var en rød bjælke med teksten: The connetion to IVU.fleet has been interrupted.", action: "Genstart af Service bon5, og det havde nu muligheden for at logge ind igen. Genstart af IVU.realtime.applicationserver.", status: "Afsluttet" },
+                    { date: "23-04-2026", time: "03:04", type: "Kan ikke logge ind i IVU", category: "IVU", desc: "Fejlen forsvandt af sig selv efter få minutter", action: "", status: "Afsluttet" },
+                    { date: "23-04-2026", time: "20:33", type: "Entry / exit", category: "IXL", desc: "Fejl på sporskifte EEEP04", action: "Der var meget skidt i sporskifte EEEP04. efter det var renset op (10 min) kunne der igen opnås kontrol på sporskiftet.", status: "Afsluttet" },
+                    { date: "21-04-2026", time: "20:57", type: "IXL Glostrup", category: "IXL", desc: "Fejl på IXL i Glostrup", action: "PLC genstartet 4 gange af personalet.", status: "Afsluttet" },
+                    { date: "21-04-2026", time: "15:46", type: "Rejsekort tjek ud stander", category: "Rejsekort", desc: "Rejsekort tjek ud stander virker ikke", action: "OCC fejlmelder selv til rejsekortet.", status: "Afsluttet" },
+                    { date: "21-04-2026", time: "12:00", type: "IXL Glostrup", category: "IXL", desc: "Fejl på IXL i Glostrup", action: "Fejlen forsvandt inden vi nåede at logge på. Kørt over for rødt. Nøgle reset ok.", status: "Afsluttet" },
+                    { date: "18-04-2026", time: "09:31", type: "Hele entry/exit blinker rødt i IXL", category: "Signalanlæg", desc: "Hele entry/exit blinker rødt i IXL og hele rænkken med I/O moduler A23-A31.0 er slukket. F32 Strømforsyningen SITOP SEL1200-1400 viser en fejl på udgang 4", action: "Manuel restart af strømfosyningen ifølge SITOP manualen virker ikke. Vi ender med at bytte med en anden SITOP strømforsyning fra skab D3 på CMC.", status: "Afsluttet" },
+                    { date: "15-04-2026", time: "22:52", type: "Sporskife kørt i stykker ved Buddinge station", category: "Sporskifte", desc: "Skporskifet er kørt i stykker så det kan ikke skiftes manuelt med sporskiftestangen", action: "Da det drejer sig om sporskiftet i Buddinge, er det projektets ansvarsområde. Ender med at tage fat i Peter Løbner der får sat en løsning i gang med Aarsleff", status: "Afsluttet?" },
+                    { date: "12-04-2026", time: "11:57", type: "Togene holder og venter på grøn i op mod 3 min ved Brønbyvester Station", category: "Lyskurv", desc: "Togene holder og venter på grøn i op mod 3 min ved Brønbyvester Station, umiddelbart i begge retninger", action: "Alt ser fint ud i PLC'en, så starter med at tage de to \"sorte glassikringer\" ud og sætter i igen, for at resette radarene.", status: "Afsluttet" },
+                    { date: "10-04-2026", time: "10:11", type: "Fejl på RVM rejsekortsautomat Glostrup St", category: "Rejsekort", desc: "Der er ikke ordelig forbindelse til rejsekortsautomaten på Glostrup St", action: "En rejsekorst teknikker fra hitachi anmode at vi kommer ned på glostrup og hjælper med at undersøge hvorfor der ikke er forbindelse. Automaten blev genstartet ordeligt.", status: "Afsluttet" },
+                    { date: "09-04-2026", time: "15:25", type: "VMS hakker og mange kamera falder ud", category: "VMS", desc: "VMS hakker og mange kamera falder ud", action: "Genstarter VMS_CORE", status: "Afsluttet" },
+                    { date: "07-04-2026", time: "07:12", type: "Lyskurv er gået i selvsving ved Delta Park i sydgående retning", category: "Lyskurv", desc: "Lyskurven står og skifter fra kør til stop, og efterfølgende starter igen med Snebolden, for igen at skifte til kør og tilbage til stop.", action: "I Teu skab V1 ved Delta Park, er de to \"sorte glassikringer\" blevet taget ud og sat i igen, for at resette radarene.", status: "Afsluttet" },
+                    { date: "02-04-2026", time: "17:00", type: "Radio", category: "Radio", desc: "OCC-plads 1 har ingen lyd i højttaler ved OPER-kald", action: "Joey (OCC) informerer at han har prøvet diverse genstarter. Jeg kører til CMC og prøver at frakoble kabel til højttaler uden held. Efter nogen grublen opdager jeg at der kommer en svag lyd fra et headset uden at være i brug.", status: "Afsluttet" },
+                    { date: "27-03-2026", time: "21:05", type: "Togveje og signaler sætter ikke længere automatisk for alle tog.", category: "IXL", desc: "Togveje og signaler sætter ikke længere automatisk for alle tog.", action: "Der er et stort antal \"disconnected from LRV interface\". IXL-serven har brugt 98% af sin RAM. Efter at lukke alle brugere, har maskinen kun brugt 50-60% RAM.", status: "Afsluttet" },
+                    { date: "25-03-2026", time: "18:48", type: "Rødt omkring bakken i GL igen.", category: "IXL", desc: "Rødt omkring bakken i GL igen.", action: "Kører tilbage til GL med forventning om at TRACON igen melder falsk besættelse. Det viser sig dog at alle TRACON er OK. Genstartes igen og alt er nu ok efter et nøgle-reset.", status: "Afsluttet" },
+                    { date: "25-03-2026", time: "16:39", type: "Der sættes indkøres til forkerte perroner og rounter skal sættes manuelt via nøgle", category: "IXL", desc: "Første meldinger om at nogle tog skal stille router via nøgle ved alle signaler.", action: "Vi master-resetter PLC. Herefter ser det ud som om at flere tog afvikles korrekt.", status: "Afsluttet" },
+                    { date: "22-03-2026", time: "16:43", type: "Signaler ved entry/exit", category: "PLC", desc: "Signaler ved entry/exit er låst fast på rødt. Reset hjælper ikke.", action: "PLC har mange røde lamper. Jeg tager strømmen fra IM-modulet, resetter sikrings anlægget.", status: "Afsluttet" },
+                    { date: "22-03-2026", time: "14:55", type: "Fejl på Glostrup station", category: "RRM", desc: "Der var problemer med RRM på Glostrup station", action: "Jeg nåede ikke at se hvad problemet var. De fik resat sig ud af problemerne.", status: "Afsluttet" },
+                    { date: "22-03-2026", time: "14:21", type: "Lyskryds ved Ishøj station", category: "Signalanlæg", desc: "Lyskryds ved ishøj station viser rødt i alle retninger.", action: "Toget får lys i begge snebolde, men der kommer ikke kør i signal. De kører toget tilbage til perron, resetter route. ITS resetter lyskryds.", status: "Afsluttet" },
+                    { date: "21-03-2026", time: "15:54", type: "Lyskryds ved Ishøj station", category: "Signalanlæg", desc: "Lyskryds ved ishøj station viser rødt i alle retninger.", action: "", status: "Ikke afsluttet" },
+                    { date: "20-03-2026", time: "18:04", type: "Lyskryds ved Ishøj station", category: "Signalanlæg", desc: "Lyskryds ved ishøj station viser rødt i alle retninger.", action: "", status: "Ikke afsluttet" },
+                    { date: "18-03-2026", time: "17:51", type: "Lyskryds ved Ishøj station", category: "Signalanlæg", desc: "Lyskryds ved ishøj station viser rødt i alle retninger.", action: "I følge OCC sker det kun i Sp 2. De løser problemet ved at køre toget tibage til perron.", status: "Ikke afsluttet" },
+                    { date: "17-03-2026", time: "08:59", type: "Hegn ved CMC", category: "Alarm", desc: "Nogen har klippet hul i hegnet ind til CMC. Det har ikke udløst alarmen.", action: "", status: "" },
+                    { date: "16-03-2026", time: "10:06", type: "Lyskryds ved Ishøj station", category: "Signalanlæg", desc: "Samme fejl som 11/03/2026", action: "", status: "" },
+                    { date: "12-03-2026", time: "19:55", type: "PID viser ? på Vallensbæk og Ishøj Strand", category: "PID", desc: "PID viser ? på Vallensbæk og Ishøj Strand", action: "Genstarter ivu.northbound og ivu.southbound", status: "Afsluttet" },
+                    { date: "12-03-2026", time: "19:28", type: "OCC kan ikke give live udkal til flere stationer", category: "Lydanlæg", desc: "OCC kan ikke give live udkal til flere stationer", action: "Melder til IHM og de tager hånd om det.", status: "??" },
+                    { date: "12-03-2026", time: "13:37", type: "sporskiftesignal EEEP04 er mørklagt", category: "Signalanlæg", desc: "sporskiftesignal EEEP04 er mørklagt. Dette sker stadig hyppigt og i dag 2 gange med 20 mins mellemrum", action: "Reset afhjælper problemet.", status: "Afsluttet" },
+                    { date: "12-03-2026", time: "05:52", type: "Nogle PID'er viser ?", category: "", desc: "Nogle PID'er viser ?", action: "Aftaler at venden tilbage, men problemet går i sig selv.", status: "Afsluttet" },
+                    { date: "11-03-2026", time: "16:19", type: "Tog bliver et ikke dedkteret ved Ishøj station", category: "Signalanlæg", desc: "Tog bliver et ikke dedkteret ved Ishøj station. Dette er åbenbat et tilbagevendene problem der tit kommer i myldretiden", action: "OCC havde kontaktet ITS der siger at de ikke får noget signal fra vores udstyr. Tjekker med Micheal Tyghsen", status: "Ikke afsluttet" },
+                    { date: "11-03-2026", time: "11:20", type: "SCADA kan ikke loade en webpage", category: "SCADA", desc: "SCADA kan ikke loade en webpage på alle Worksstations", action: "Logger ind på SCADA og alt ser godt ud hos os. Beder OCC om at tjekke deres egne servere", status: "Afsluttet" },
+                    { date: "10-03-2026", time: "10:43", type: "Track circit 23 melder besat når et tog køre gennem track circit 22", category: "Sporskifte", desc: "Track circit 23 melder besat når et tog køre gennem track circit 22", action: "Vi har taget fat i tyskerne som mener at point-sensorerne skal vedligholtes/rejusteres.", status: "Ikke afsluttet" },
+                    { date: "10-03-2026", time: "07:10", type: "Sporskifte 110 melder fejl når der køres et tog over", category: "Sporskifte", desc: "Sporskifte 110 melder fejl når der køres et tog over, og der skal ud \"vrike\" med sporskifestangen", action: "Vi fejer skidt og snavs væk fra sporet og alt er fint igen.", status: "Afsluttet" },
+                    { date: "10-03-2026", time: "07:10", type: "Snebold ved E/E lyser ikke", category: "Signalanlæg", desc: "Snebolden ved E/E lyser ikke, men de får stadig lov til at køre tog ud.", action: "OCC mente at pæren var gået. Vi skifter pæren og det hjælper ikke. Melder fejl til ITS", status: "Afsluttet??" },
+                    { date: "10-03-2026", time: "07:10", type: "Overvågning falder ud", category: "VMS", desc: "Overvågning falder ud", action: "Genstarter VMS CORE", status: "Afsluttet" },
+                    { date: "04-03-2026", time: "16:05", type: "Gummi i sporet på Ishøj", category: "Spor", desc: "Der ligger \"noget gummi\" i sporet fra en trackcircuit i Ishøj", action: "Det var noget gummi imellem skinne og betonplade der var faldet af. Jeg fjernede det helt.", status: "Afsluttet" },
+                    { date: "03-03-2026", time: "12:00", type: "SIPASS", category: "SIPASS", desc: "Når de åbner SIPASS manager på client, får de en fejlmeddelelse at der mangler licens", action: "Med hjælp fra Jesper fra SBT, kopierer vi licens fra serveren til clienten.", status: "Afsluttet" },
+                    { date: "20-02-2026", time: "06:49", type: "IVU", category: "IVU", desc: "IVU kommer med et fejl-vindue når logges ind på Workstation 4", action: "Der er oprettet en ticket hos IVU, vi afventer.", status: "Ikke afsluttet" },
+                    { date: "16-02-2026", time: "11:00", type: "PID mod nord Glostrup Ejby", category: "PID", desc: "2 skærme mod nord viser forkert tid.", action: "Northbound service på IVU server genstartet.", status: "Afsluttet" },
+                    { date: "12-02-2026", time: "00:00", type: "Ishøj", category: "Sporskiftevarme", desc: "SCADA melder fejl på spændingsforsyning", action: "Automatsikring F1 var trippet. Sikring F3 aktiveret og alt ok.", status: "Afsluttet" },
+                    { date: "11-02-2026", time: "16:00", type: "SCADA viser udefineret på kørestrøm", category: "SCADA", desc: "Forbindelsen til SUB 8 er forsvundet", action: "Forbindelsen til SUB 8 blev fejlmeldt CODEEX. Der blev fundet en serverfejl + konfiguratinsfejl i SCADA.", status: "Afsluttet" },
+                    { date: "10-02-2026", time: "08:51", type: "Glostrup: Sporskifte 12 fejler.", category: "Sporskifte", desc: "Sporskifte 12 kan ikke stille om automatisk. det virker med stang.", action: "Metalskilt fra sporskiftet var faldet ned i mellem skinne og tunge. metalskilt fjernet.", status: "Afsluttet" },
+                    { date: "10-02-2026", time: "06:51", type: "Glostrup: Sporskifte 03 fejler.", category: "Sporskifte", desc: "Sporskifte 03 kan ikke få kontrol.", action: "Sporskifte kontrol justeret.", status: "Afsluttet" },
+                    { date: "10-02-2026", time: "05:57", type: "IXL er blevet grå.", category: "RRM", desc: "RRM er har tabt forbindelsen", action: "RRM service blev genstartet.", status: "Afsluttet" },
+                    { date: "09-02-2026", time: "18:06", type: "En PID skærm på Brøndbyvester virker ikke", category: "PID", desc: "En skærm mod nord virker ikke Den anden er ok.", action: "Skærmen skal slukkes og tændes. Fejlretning udsat til næste dag.", status: "Afsluttet" },
+                    { date: "09-02-2026", time: "15:40", type: "PID i Glostrup mod syd virker ikke.", category: "PID", desc: "PID i Glostrup mod syd virker ikke.", action: "Southbound service på IVU server genstartet.", status: "Afsluttet" },
+                    { date: "09-02-2026", time: "14:15", type: "Qognify VMS i OCC", category: "CCTV", desc: "OCC kan ikke logge på VMS", action: "VMS flyttet fra server 5 til ny server 6 + plus ændret i firewall", status: "Afsluttet" },
+                    { date: "06-02-2026", time: "15:21", type: "Ingen kontakt til IXL skab på bakken ved Glostrup", category: "SIgnalanlæg", desc: "Utæt skab resulterer i kortsluttet DEWEMO-W modul", action: "Skifter DEWEMO-W modul og dækker komponenter i plastik", status: "Afsluttet" },
+                    { date: "06-02-2026", time: "09:59", type: "Ingen kontakt til IXL skab på bakken ved Glostrup", category: "SIgnalanlæg", desc: "Utæt skabe resulterer i kortsluttet powersupply", action: "Skifter powersupply og dækker komponenter i plastik", status: "Afsluttet" },
+                    { date: "06-02-2026", time: "03:54", type: "Besættelsesfejl ved Glostrup station", category: "Signalanlæg", desc: "OCC melder besættelsesfejl på Glostrup", action: "Efter et par m-reset af plc'en går problemet i sig selv.", status: "Afsluttet" },
+                    { date: "05-02-2026", time: "05:46", type: "Fejl af intræk af tog ved Entry/Exit", category: "Signalanlæg", desc: "PLC'en i Entry/Exit melder fejl og der kan ikke trækkes tog ind.", action: "Et enkelt I/O modul i Entry/Exit skab melder fejl. Beder OCC om at tage modulet ud og sætte det i igen + PLC reset.", status: "Afsluttet" },
+                    { date: "05-02-2026", time: "05:04", type: "Stor mængde strøm trukket under togforvarmning", category: "", desc: "Større mængde strøm end normalt trukket under morgnenes opvarminng af alle tog på CMC", action: "Når der slukkes helt for togene, forklare CMC at det er procedure at kalde os op for at sikre at det er okay at enegize igen??", status: "Ikke afsluttet" },
+                    { date: "04-02-2026", time: "08:57", type: "Fejl på PID Rødovre Nord", category: "PID", desc: "PID skærm i nord-gående retning er ikke bootet ordeligt", action: "PID genstartes fra MCB'en på stationen.", status: "Afluttet" },
+                    { date: "04-02-2026", time: "07:52", type: "Sporskifgte 102 på CMC melder fejl efter slibning", category: "Sporskifte", desc: "Sporskifgte 102 på CMC melder fejl efter slibning. Der er intet signal til Sposkiftedrevet i interlocking skabet.", action: "Efter et par forsøg med sporskiftestangen får sporskiftedrevet fat igen, og OCC har igen kontrol med skifte 102.", status: "Afsluttet" },
+                    { date: "03-02-2026", time: "08:30", type: "Der bliver meldt fejl fra skab D3 på CMC", category: "Signalanlæg", desc: "Der var opstået fejl fra skab D3 på CMC 3-4 gange fra ca. kl 7:30", action: "Bender om at tjekke om I/O modulerne er trykket ordeligt sammen. Problemet forsvinder her efter", status: "Afsluttet" },
+                    { date: "02-02-2026", time: "12:00", type: "PLC i D1 på CMC går i stop hvert 30. min", category: "Signalanlæg", desc: "PLC'en i D1 går i stop hvert 30. min", action: "I forlængelse af problemet fra natten før, viser det sig at PLC'en går i stop pga temperaturen i skabet var under 0 grader. Varmelegmet i skabet var defekt og er nu blevet skiftet.", status: "Afsluttet" },
+                    { date: "02-02-2026", time: "08:00", type: "CMC er helt grå på IXL", category: "Signalanlæg", desc: "Forbindelsen til CMC-interlocking er væk", action: "Metroservice får det selv igang i første omgang ved at resette PLC. Efter nogen tid genemgår vi diagnose-buffer på PLC. Ender med at skifte PLC-CPU.", status: "Afsluttet" },
+                    { date: "01-02-2026", time: "18:36", type: "Der er byttet rundt på de 2 PID-skærme i Ishøj", category: "CCTV", desc: "Der er byttet rundt på de 2 PID-skærme i Ishøj", action: "Jeg sagde til dem, at det kunne jeg nok ikke gøre noget ved, men jeg tilbød alligevel at genstarte north- og southbound.", status: "Ikke afsluttet" },
+                    { date: "26-01-2026", time: "05:10", type: "VMS/CCTV hakker , fryser og falder ud på diverse stationer", category: "CCTV", desc: "OCC har problemer med CCTV på diverse stationer. Mange kameraer står med hvid skærm (forbindelsesfejl - fejl 21656)", action: "Først kontaktet Codeex - de mener ikke at have problemer. Kontaktet Siemens BuildingTech der genstarter services", status: "Ikke afsluttet" },
+                    { date: "25-01-2026", time: "16:20", type: "VMS/CCTV hakker , fryser og falder ud på diverse stationer", category: "CCTV", desc: "OCC har problemer med CCTV på diverse stationer. Mange kameraer står med hvid skærm (forbindelsesfejl - fejl 21656)", action: "Først kontaktet Codeex - de mener ikke at have problemer. Kontaktet Siemens BuildingTech der genstarter services", status: "Ikke afsluttet" },
+                    { date: "25-01-2026", time: "08:45", type: "VMS/CCTV hakker , fryser og falder ud på diverse stationer", category: "CCTV", desc: "OCC har problemer med CCTV på diverse stationer. Mange kameraer står med hvid skærm (forbindelsesfejl - fejl 21656)", action: "Først kontaktet Codeex - de mener ikke at have problemer. Kontaktet Siemens BuildingTech der genstarter services", status: "Ikke afsluttet" },
+                    { date: "25-01-2026", time: "14:30", type: "workstation 3 opfører sig underligt", category: "Workstation", desc: "IVU åbner ikke som det skal og en af skærmene flimre.", action: "Det viser sig at der er blevet tilføjet en ekstra skærm til alle workstations. Vi piller den nye ekstra skærm fra og alt virker som det plejer.", status: "Afsluttet" },
+                    { date: "25-01-2026", time: "11:39", type: "Flere PID displays står med ?-tegn/IP-text", category: "Program", desc: "Flere PID displays står med ?-tegn/IP-text. Det er meget tilfældigt hvilke skærme der virker", action: "Kontakter først Codeex der mener at de har hul igennem til deres del. Får derefter fat i IVU der genstarter en service", status: "Afventer" },
+                    { date: "25-01-2026", time: "10:14", type: "PDU i serverrummet", category: "Netværk", desc: "PDU'en trækker ikke noget strøm ud til sine komponenter", action: "Beder Codeex om at genstarte PDU'en", status: "Afsluttet" },
+                    { date: "24-11-2025", time: "20:42", type: "Besættesle ved Entry/Exit", category: "Hardware", desc: "Kan ikke sætte togeveje ved Entry/Exit bliver besat med det samme igen når der resættes i skabet.", action: "Masterreset af PLC", status: "Afsluttet" },
+                    { date: "24-11-2025", time: "16:47", type: "Sporskife vramer ikke på Glostrup", category: "SPSKvarme", desc: "Fejl på SM9 i sporskiftevarme-skab", action: "Fejlen blev fundet tidligere på dangen, muligt defekt varmelegeme som der bliver arbejdet på at få fikset.", status: "Afventer" },
+                    { date: "24-11-2025", time: "11:43", type: "IXL signaler stå og blinker på Entry/Exit", category: "RRM", desc: "IXL signaler stå og blinker på Entry/Exit", action: "Beder OCC om at gå ned og resætte i skabet", status: "Afsluttet" },
+                    { date: "23-11-2025", time: "20:09", type: "IXL (RRM) er frosset", category: "RRM", desc: "IXL (RRM) er frosset", action: "RRM_service genstartet.", status: "Afsluttet" },
+                    { date: "23-11-2025", time: "14:42", type: "Fejl på Entry/Exit", category: "Hardware", desc: "Sporisol \"fra nord\" er kunstigbesat. Sidste modul i A12-rækken blinker fejl. Samme fejl som 20/11 og 22/11.", action: "Bad Metroservice om at kontrollere DEWEMO og de fysiske skifter. Fandt et skifte der ikke var i kontrol.", status: "Afsluttet" },
+                    { date: "23-11-2025", time: "07:14", type: "Fejl på Entry/exit.", category: "Hardware", desc: "Sporisol \"fra nord\" er kunstigbesat. Sidste modul i A12-rækken blinker fejl. Samme fejl som 20/11.", action: "Jeg kan ikke finde reservedel, så jeg kører til Lundtofte og låner et modul dèr.", status: "Afsluttet" },
+                    { date: "22-11-2025", time: "18:44", type: "Fejl på Entry/exit.", category: "Hardware", desc: "Sporisol \"fra nord\" er kunstigbesat. Sidste modul i A12-rækken blinker fejl. Samme fejl som 20/11.", action: "Jeg fik instrueret Metroservice i at tage strømmen fra modulet, derefter reset. Aftalte at næste gang vil jeg skifte modulet.", status: "Afsluttet" },
+                    { date: "21-11-2025", time: "21:07", type: "Fejl på Entry/exit.", category: "Hardware", desc: "Sporisol \"fra nord\" er kunstigbesat. Sidste modul i A12-rækken blinker fejl. Samme fejl som 20/11.", action: "Jeg fik instrueret Metroservice i at tage strømmen fra modulet, derefter reset", status: "Afsluttet" },
+                    { date: "21-11-2025", time: "15:00", type: "Snebold lyser ikke i Strandhaven", category: "ITS", desc: "Togene registreres fin af radar, men der kommer ikke kvittering herfor i snebolden.", action: "Kaldte ITS, der pillede ved noget i deres styring.", status: "Afsluttet" },
+                    { date: "21-11-2025", time: "05:11", type: "De kan ikke få kontrol på spsk 02 i Ishøj.", category: "SPSKvarme", desc: "De kan ikke få kontrol på spsk 02 i Ishøj.", action: "Der er is imellem tungerne. SPSKvarme er faldet ud. Automatsikring er tripped. Automatsikring i Ishøj og CMC justeres", status: "Afsluttet" },
+                    { date: "20-11-2025", time: "16:54", type: "2 sporisolationer blinker rød på Entry-Exit", category: "Trackcircuit", desc: "2 sporisolationer blinker rød på Entry-Exit", action: "Failsafeinputmodul helt til højre over Tracon, er i fejltilstand. Man kan ikke \"normalresette\" sig ud af det. Tag strømmen fra IM-modulet og laver nøgereset", status: "Afsluttet" },
+                    { date: "20-11-2025", time: "12:00", type: "CCTV: Kameraer falder og og falder ind sporadisk", category: "CCTV", desc: "CCTV: Kameraer falder og og falder ind sporadisk", action: "Til at starte med var det sporadisk, ca kl 14 var det alle kameraer på stationer og CMC. Endte med at restarte maskinen, herefter gik det iorden.", status: "Afsluttet" },
+                    { date: "20-11-2025", time: "11:45", type: "IXL (RRM) er frosset", category: "Program", desc: "IXL (RRM) er frosset", action: "RRM_service genstartet.", status: "Afsluttet" },
+                    { date: "20-05-2026", type: "Besættlsesfejl på trackcircet G2TC16 på Glostrup bakke", category: "Trackcircet", desc: "Besættlsesfejl på trackcircet G2TC16 på Glostrup bakke", action: "Tracon modul G2TC16 melder falsk besættelse på Glostrup bakke. Laver et standard reset + nøgle-reset og besættelsen forsvinder igen.", status: "Afsluttet" },
+                    { date: "20-05-2026", type: "Fejl på signal D2S03 i spor 10 på CMC", category: "Signalanlæg", desc: "Fejl på signal D2S03 i spor 10 på CMC", action: "Kan løses med et nøgle-reset, men OCC klager over at dette er en tilbagevendende fejl. Aftaler at de skal kontakte os hver gang det sker.", status: "Afsluttet" },
+                    { date: "19-05-2026", type: "Det er ikke muligt at trække tog ind og ud med IVU fra CMC", category: "IVU/RRM", desc: "Det er ikke muligt at trække tog ind og ud med IVU fra CMC", action: "Genstarter RRM og det bliver muligt at trække tog ind og ud med IVU igen.", status: "Afsluttet" },
+                    { date: "19-05-2026", type: "Fejl i IXL skab D4 på CMC", category: "Signalanlæg", desc: "Failsafe modul A11.6/A31.3-A31.6 blinker rødt i D4 skabet på CMC. OCC nøgleresetter sig ud af det, men samme fejl vender tilbage efter en time.", action: "Master-resetter PLC'en i D2 skabet og høre ikke mere.", status: "Afsluttet" },
+                    { date: "19-05-2026", type: "Det er ikke muligt at trække tog ind og ud med IVU fra CMC", category: "IVU/RRM", desc: "Det er ikke muligt at trække tog ind og ud med IVU fra CMC", action: "Vi starter med at prøve at genstarte alle services/servere der har med IVU-fleet at gøre uden held. Vi escalerer til IVU i Tyskland.", status: "Afsluttet" },
+                    { date: "19-05-2026", type: "Hele Glostrup banegård blinker rødt i RRM", category: "Signalanlæg", desc: "Hele Glostrup banegård blinker rødt i RRM. De kan nøgle-resettte sig ud af det, men det skete 2 ganage inden for 5 min, så OCC ønsker et PLC-masterreset", action: "Kører til Glostrup og masterresetter. Hører intet derefter.", status: "Afsluttet" },
+                    { date: "18-05-2026", type: "Besættelsesfejl ved entry/exit", category: "Signalanlæg", desc: "Besættelsesfejl ved entry/exit. RRM viste at der var en besættelse i trackcircet 08, men tracon modulet viste igenting.", action: "Almindeligt nøgle-reset virkede ikke. Et PLC-masterreset efterfulgt af nøgle-reset løste problemet.", status: "Afsluttet" },
+                    { date: "18-05-2026", type: "Kamera på Krikebjerk st. kommer ikke online after genstart af Switch", category: "CCTV/VMS", desc: "Kamera på Krikebjerk st. kommer ikke online after genstart af Switch", action: "Jeg prøver at genstarte VMS_CORE uden held, så jeg får fat i Siemens Infrakstruktur som opretter en sag på problemet.", status: "Afsluttet" },
+                    { date: "18-05-2026", type: "Ingen forbindelse til Krikebjerg station", category: "Station", desc: "Switchen på Kirkebjerg station havde ingen forbindesle til omverden eller sit eget udstyr.", action: "Genstart switchen med Codeex i røret og de fleste systemer kommmer online igen.", status: "Afsluttet" },
+                    { date: "08-05-2026", type: "Spor 10 Signal D2S03 melder Forbi-kørsel", category: "IXL", desc: "Flere gange har man oplevet at få alarm fra signal D2S03 ved udtræk af tog fra spor 10, selvom man IKKE har kørt over for rødt.", action: "Kan se i RRM-eventlog at der starter et Route Request forløb som ender i ERROR i forbindelse med Overkørsel ved signal D2S03.", status: "Ej afsluttet" },
+                    { date: "08-05-2026", type: "CMC pull in/out", category: "Signalanlæg", desc: "CMC pull in/out virker ikke. Der kan ikke sættes router ud og ind af CMC", action: "Fejlen skyldes falsk besættelse TC02 i EE. Besættelsen kunne ikke ses i IXL. Efter genstart af IXL blev besættelsen synlig.", status: "Afsluttet" },
+                    { date: "07-05-2026", type: "IXL på CMC - alt blinker", category: "IXL", desc: "Alt blinker rødt på CMC, man har prøvet at udføre nøgle-reset et par gange uden succes", action: "Foreslår at OCC sender en person ned og udføre reset igen, og samtidig kører vi til CMC for at hjælpe.", status: "Afsluttet" },
+                    { date: "07-05-2026", type: "Glostrup TC14 viser falsk besættelse", category: "TC", desc: "TC14 viser besat selvom der ikke er noget tog der. Togdrift sat på pause.", action: "Tracon TC14 modul i IXL skab viser IKKE besættelse. Efter dreje \"reset\" nøglen i skabet uden held, udfører vi en RRM-service restart.", status: "Afsluttet" },
+                    { date: "04-05-2026", type: "Lyskryds problemer ved BrøndbyVester station", category: "Signalanlæg", desc: "Lyskryds problemer ved BrøndbyVester station. LRV får ikke prioritet.....", action: "Henviser OCC til ITS.", status: "Afsluttet" },
+                    { date: "28-04-2026", type: "Kan ikke logge ind i IVU", category: "IVU", desc: "10.72.2.15 Oracle server var ophørt med at fungere, og kunne ikke pinges.", action: "Efter at have kontaktet Codex fik de gang i den igen, og så blev vejlledingen til at starte IVU igen fulgt.", status: "Afsluttet" },
+                    { date: "24-04-2026", type: "Glostrup GL2TC16/GL2TC14", category: "TC", desc: "Falsk besættelse", action: "Personalet fik selv styr på det. Alt så normalt ud i skabet ved stationen. Lågen ud mod sporet var ikke låst.", status: "Afsluttet" },
+                    { date: "24-04-2026", type: "Can ikke logge ind i IVU", category: "IVU", desc: "Fejlen forsvandt af sig selv efter få minutter", action: "", status: "Afsluttet" },
+                    { date: "24-04-2026", type: "Kan ikke logge ind i IVU", category: "IVU", desc: "Det var ikke muligt at logge ind i IVU, og login billedet var helt gråt med rød bjælke om \"The connetion to IVU.fleet has been interrupted\"", action: "Genstart af Service bon5, og det havde nu muligheden for at logge ind igen", status: "Afsluttet" },
+                    { date: "23-04-2026", type: "Entry / exit", category: "IXL", desc: "Fejl på sporskifte EEEP04", action: "Der var meget skidt i sporskifte EEEP04. efter det var renset op (10 min) kunne der igen opnås kontrol på sporskiftet.", status: "Afsluttet" },
+                    { date: "21-04-2026", type: "IXL Glostrup", category: "IXL", desc: "Fejl på IXL i Glostrup", action: "PLC genstartet 4 gange af personalet.", status: "Afsluttet" },
+                    { date: "21-04-2026", type: "Rejsekort tjek ud stander", category: "Rejsekort", desc: "Rejsekort tjek ud stander virker ikke", action: "OCC fejlmelder selv til rejsekortet.", status: "Afsluttet" },
+                    { date: "21-04-2026", type: "IXL Glostrup", category: "IXL", desc: "Fejl på IXL i Glostrup", action: "Fejlen forsvandt inden vi nåede at logge på. Kørt over for rødt. Nøgle reset ok.", status: "Afsluttet" },
+                    { date: "18-04-2026", type: "Hele entry/exit blinker rødt i IXL", category: "Signalanlæg", desc: "Hele entry/exit blinker rødt i IXL og hele rænkken med I/O moduler A23-A31.0 er slukket. F32 Strømforsyningen SITOP SEL1200-1400 viser en fejl på udgang 4", action: "Manuel restart af strømfosyningen ifølge SITOP manualen virker ikke. Vi ender med at bytte med en anden SITOP strømforsyning fra skab D3 på CMC.", status: "Afsluttet" },
+                    { date: "15-04-2026", type: "Sporskife kørt i stykker ved Buddinge station", category: "Sporskifte", desc: "Skporskifet er kørt i stykker så det kan ikke skiftes manuelt med sporskiftestangen", action: "Da det drejer sig om sporskiftet i Buddinge, er det projektets ansvarsområde. Ender med at tage fat i Peter Løbner der får sat en løsning i gang med Aarsleff", status: "Afsluttet?" },
+                    { date: "12-04-2026", type: "Togene holder og venter på grøn i op mod 3 min ved Brønbyvester Station", category: "Lyskurv", desc: "Togene holder og venter på grøn i op mod 3 min ved Brønbyvester Station, umiddelbart i begge retninger", action: "Alt ser fint ud i PLC'en, så starter med at tage de to \"sorte glassikringer\" ud og sætter i igen, for at resette radarene.", status: "Afsluttet" },
+                    { date: "10-04-2026", type: "Fejl på RVM rejsekortsautomat Glostrup St", category: "Rejsekort", desc: "Der er ikke ordelig forbindelse til rejsekortsautomaten på Glostrup St", action: "En rejsekorst teknikker fra hitachi anmode at vi kommer ned på glostrup og hjælper med at undersøge hvorfor der ikke er forbindelse. Codeex kan ikke se nogen fejl på deres porte. Det viser sig at automaten bare skulle genstartes ordeligt.", status: "Afsluttet" },
+                    { date: "09-04-2026", type: "VMS hakker og mange kamera falder ud", category: "VMS", desc: "VMS hakker og mange kamera falder ud", action: "Genstarter VMS_CORE", status: "Afsluttet" },
+                    { date: "07-04-2026", type: "Lyskurv er gået i selvsving ved Delta Park i sydgående retning", category: "Lyskurv", desc: "Lyskurven står og skifter fra kør til stop, og efterfølgende starter igen med Snebolden, for igen at skifte til kør og tilbage til stop.", action: "I Teu skab V1 ved Delta Park, er de to \"sorte glassikringer\" blevet taget ud og sat i igen, for at resette radarene.", status: "Afsluttet" },
+                    { date: "02-04-2026", type: "Radio", category: "Radio", desc: "OCC-plads 1 har ingen lyd i højttaler ved OPER-kald", action: "Joey (OCC) informerer at han har prøvet diverse genstarter samt check af audio settings på worksation. Jeg rode til CMC og prøver at frakoble kabel til højttaler uden held.", status: "Afsluttet" },
+                    { date: "27-03-2026", type: "Togveje og signaler sætter ikke længere automatisk for alle tog.", category: "IXL", desc: "Togveje og signaler sætter ikke længere automatisk for alle tog.", action: "Der en et stort antal \"disconnected from LRV interface at CMCVIR-IVUDMZ01\". IXL-serven har brugt 98% af sin RAM - årsag brugere på serveren logger ikke ud, men disconnecter blot deres session.", status: "Afsluttet" },
+                    { date: "25-03-2026", type: "Der sættes indkøres til forkerte perroner og rounter skal sættes manuelt via nøgle på Glostrup og Ishøj", category: "IXL", desc: "Først går meldingen på at nogle tog har problemer, senere hen meldes at alle tog skal stille router via nøgle ved alle signaler.", action: "Togdriften i GL overvåges fra GL og via IXL (Nicolai). Vi master-resetter PLC. Herefter ser det ud som om at flere tog afvikles korrekt.", status: "Afsluttet" },
+                    { date: "25-03-2026", type: "Rødt omkring bakken i GL igen.", category: "IXL", desc: "Rødt omkring bakken i GL igen.", action: "Kører tilbage til GL med forventning om at TRACON igen melder falsk besættelse. Det viser sig dog at alle TRACON er OK. Så må fejlen ligge I IXL - den genstartes igen og alt er nu ok efter et nøgle-reset.", status: "Afsluttet" },
+                    { date: "22-03-2026", type: "Lyskryds ved Ishøj station", category: "Signalanlæg", desc: "Lyskryds ved ishøj station viser rødt i alle retninger.", action: "I følge OCC sker det kun i Sp 2. De løser problemet ved at køre toget tibage til perron, derefter nulstilles routen, der sættes en route, så virker det.", status: "Ikke afsluttet" },
+                    { date: "22-03-2026", type: "Fejl på Glostrup station", category: "RRM", desc: "Der var problemer med RRM på Glostrup station", action: "Jeg nåede ikke at se hvad problemet var. De fik resat sig ud af problemerne. Jeg gjorde ingenting.", status: "Afsluttet" },
+                    { date: "22-03-2026", type: "Signaler ved entry/exit", category: "PLC", desc: "Signaler ved entry/exit er låst fast på rødt. Reset hjælper ikke.", action: "PLC har mange røde lamper. Jeg tager strømmen fra IM-modulet, resetter sikrings anlægget (grøn,rød + nøgle).", status: "Afsluttet" },
+                    { date: "21-03-2026", type: "Lyskryds ved Ishøj station", category: "Signalanlæg", desc: "Lyskryds ved ishøj station viser rødt i alle retninger.", action: "", status: "Ikke afsluttet" },
+                    { date: "20-03-2026", type: "Lyskryds ved Ishøj station", category: "Signalanlæg", desc: "Lyskryds ved ishøj station viser rødt i alle retninger.", action: "", status: "Ikke afsluttet" },
+                    { date: "18-03-2026", type: "Lyskryds ved Ishøj station", category: "Signalanlæg", desc: "Lyskryds ved ishøj station viser rødt i alle retninger.", action: "I følge OCC sker det kun i Sp 2. De løser problemet ved at køre toget tibage til perron, derefter nulstilles routen.", status: "Ikke afsluttet" },
+                    { date: "17-03-2026", type: "Hegn ved CMC", category: "Alarm", desc: "Nogen har klippet hul i hegnet ind til CMC. Det har ikke udløst alarmen.", action: "", status: "" },
+                    { date: "16-03-2026", type: "Lyskryds ved Ishøj station", category: "Signalanlæg", desc: "Samme fejl som 11/03/2026", action: "", status: "" },
+                    { date: "12-03-2026", type: "PID viser ? på Vallensbæk og Ishøj Strand", category: "PID", desc: "PID viser ? på Vallensbæk og Ishøj Strand", action: "Genstarter ivu.northbound og ivu.southbound", status: "Afsluttet" },
+                    { date: "12-03-2026", type: "OCC kan ikke give live udkal til flere stationer", category: "Lydanlæg", desc: "OCC kan ikke give live udkal til flere stationer", action: "Melder til IHM og de tager hånd om det.", status: "??" },
+                    { date: "12-03-2026", type: "sporskiftesignal EEEP04 er mørklagt", category: "Signalanlæg", desc: "sporskiftesignal EEEP04 er mørklagt. Dette sker stadig hyppigt og i dag 2 gange med 20 mins mellemrum", action: "Reset afhjælper problemet.", status: "Afsluttet" },
+                    { date: "12-03-2026", type: "Nogle PID'er viser ?", category: "", desc: "Nogle PID'er viser ?", action: "Aftaler at venden tilbage, men problemet går i sig selv.", status: "Afsluttet" },
+                    { date: "11-03-2026", type: "Tog bliver et ikke dedkteret ved Ishøj station", category: "Signalanlæg", desc: "Tog bliver et ikke dedkteret ved Ishøj station, der skal sættets grønt lys manuelt. Dette er åbenbat et tilbagevendene problem der tit kommer i myldretiden", action: "OCC havde kontaktet ITS der siger at de ikke får noget signal fra vores udstyr. Tjekker med Micheal Tyghsen", status: "Ikke afsluttet" },
+                    { date: "11-03-2026", type: "SCADA kan ikke loade en webpage", category: "SCADA", desc: "SCADA kan ikke loade en webpage på alle Worksstations", action: "Logger ind på SCADA og alt ser godt ud hos os. Beder OCC om at tjekke deres egne servere og jeg høre ikke mere", status: "Afsluttet" },
+                    { date: "11-03-2026", type: "Track circit 23 melder besat når et tog køre gennem track circit 22", category: "Sporskifte", desc: "Track circit 23 melder besat når et tog køre gennem track circit 22", action: "Vi har taget fat i tyskerne som mener at point-sensorerne skal vedligeholdes/rejusteres.", status: "Ikke afsluttet" },
+                    { date: "10-03-2026", type: "Sporskifte 110 melder fejl når der køres et tog over", category: "Sporskifte", desc: "Sporskifte 110 melder fejl når der køres et tog over, og der skal ud \"vrike\" med sporskifestangen", action: "Vi fejer skidt og snavs væk fra sporet og alt er fint igen.", status: "Afsluttet" },
+                    { date: "10-03-2026", type: "Snebold ved E/E lyser ikke", category: "Signalanlæg", desc: "Snebolden ved E/E lyser ikke, men de får stadig lov til at køre tog ud.", action: "OCC mente at pæren var gået da de stadig kunne få lov til at køre tog igennem. Vi skifter pæren og det hjælper ikke. Melder fejl til ITS og høre ikke mere.", status: "Afsluttet??" },
+                    { date: "10-03-2026", type: "Overvågning falder ud", category: "VMS", desc: "Overvågning falder ud", action: "Genstarter VMS CORE", status: "Afsluttet" },
+                    { date: "04-03-2026", type: "Gummi i sporet på Ishøj", category: "Spor", desc: "Der ligger \"noget gummi\" i sporet fra en trackcircuit i Ishøj", action: "Det var noget gummi imellem skinne og betonplade der var faldet af. Jeg fjernede det helt og fortalte OCC, at det intet havde med trackcircuit at gøre.", status: "Afsluttet" },
+                    { date: "03-03-2026", type: "SIPASS", category: "SIPASS", desc: "Når de åbner SIPASS manager på client, får de en fejlmeddelelse at der mangler licens", action: "Med hjælp fra Jesper fra SBT, kopierer vi licens fra serveren (10.66.2.11) til clienten (10.73.32.30).", status: "Afsluttet" },
+                    { date: "20-02-2026", type: "IVU", category: "IVU", desc: "IVU kommer med et fejl-vindue når logges ind på Workstation 4", action: "Der er oprettet en ticket hos IVU, vi afventer.", status: "Ikke afsluttet" },
+                    { date: "11-02-2026", type: "PID mod nord Glostrup Ejby", category: "PID", desc: "2 skærme mod nord viser forkert tid.", action: "Northbound service på IVU server genstartet.", status: "Afsluttet" },
+                    { date: "11-02-2026", type: "Ishøj", category: "Sporskiftevarme", desc: "SCADA melder fejl på spændingsforsyning", action: "Automatsikring F1 var trippet. Sikring F3 aktiveret og alt ok.", status: "Afsluttet" },
+                    { date: "11-02-2026", type: "SCADA viser udefineret på kørestrøm", category: "SCADA", desc: "Forbindelsen til SUB 8 er forsvundet", action: "Forbindelsen til SUB 8 blev fejlmeldt CODEEX. Sag ID 0065545. CODEEX melder tilbage at de ikke har fejl. Der blev fundet en serverfejl + en konfiguratinsfejl i SCADA.", status: "Afsluttet" },
+                    { date: "10-02-2026", type: "Glostrup: Sporskifte 12 fejler.", category: "Sporskifte", desc: "Sporskifte 12 kan ikke stille om automatisk. det virker med stang.", action: "Metalskilt fra sporskiftet var faldet ned i mellem skinne og tunge. metalskilt fjernet.", status: "Afsluttet" },
+                    { date: "10-02-2026", type: "Glostrup: Sporskifte 03 fejler.", category: "Sporskifte", desc: "Sporskifte 03 kan ikke få kontrol.", action: "Sporskifte kontrol justeret.", status: "Afsluttet" },
+                    { date: "10-02-2026", type: "IXL er blevet grå.", category: "RRM", desc: "RRM er har tabt forbindelsen", action: "RRM service blev genstartet.", status: "Afsluttet" },
+                    { date: "09-02-2026", type: "En PID skærm på Brøndbyvester virker ikke", category: "PID", desc: "En skærm mod nord virker ikke Den anden er ok.", action: "Skærmen skal slukkes og tændes. Fejlretning udsat til næste dag.", status: "Afsluttet" },
+                    { date: "09-02-2026", type: "PID i Glostrup mod syd virker ikke.", category: "PID", desc: "PID i Glostrup mod syd virker ikke.", action: "Southbound service på IVU server genstartet.", status: "Afsluttet" },
+                    { date: "09-02-2026", type: "Qognify VMS i OCC", category: "CCTV", desc: "OCC kan ikke logge på VMS", action: "VMS flyttet fra server 5 til ny server 6 + plus ændret i firewall: Codeex Anmodnings-ID: 0065245", status: "Afsluttet" },
+                    { date: "06-02-2026", type: "Ingen kontakt til IXL skab på bakken ved Glostrup", category: "SIgnalanlæg", desc: "Utæt skab resulterer i kortsluttet DEWEMO-W modul", action: "Skifter DEWEMO-W modul og dækker komponenter i plastik", status: "Afsluttet" },
+                    { date: "06-02-2026", type: "Ingen kontakt til IXL skab på bakken ved Glostrup", category: "SIgnalanlæg", desc: "Utæt skabe resulterer i kortsluttet powersupply", action: "Skifter powersupply og dækker komponenter i plastik", status: "Afsluttet" },
+                    { date: "06-02-2026", type: "Besættelsesfejl ved Glostrup station", category: "Signalanlæg", desc: "OCC melder besættelsesfejl på Glostrup", action: "Efter et par m-reset af plc'en går problemet i sig selv.", status: "Afsluttet" },
+                    { date: "05-02-2026", type: "Fejl af intræk af tog ved Entry/Exit", category: "Signalanlæg", desc: "PLC'en i Entry/Exit melder fejl og der kan ikke trækkes tog ind. De har prøvet nøgle-reset og master-reset.", action: "Et enkelt I/O modul i Entry/Exit skab melder fejl. Beder OCC om at tage modulet ud og sætte det i igen + PLC reset.", status: "Afsluttet" },
+                    { date: "05-02-2026", type: "Stor mængde strøm trukket under togforvarmning", category: "", desc: "Større mængde strøm end normalt trukket under morgnenes opvarminng af alle tog på CMC", action: "Når der slukkes helt for togene, forklare CMC at det er procedure at kalde os op for at sikre at det er okay at enegize igen??", status: "Ikke afsluttet" },
+                    { date: "04-02-2026", type: "Fejl på PID Rødovre Nord", category: "PID", desc: "PID skærm i nord-gående retning er ikke bootet ordeligt", action: "PID genstartes fra MCB'en på stationen.", status: "Afluttet" },
+                    { date: "04-02-2026", type: "Sporskifgte 102 på CMC melder fejl efter slibning", category: "Sporskifte", desc: "Sporskifgte 102 på CMC melder fejl efter slibning. Der er intet signal til Sposkiftedrevet i interlocking skabet.", action: "Efter et par forsøg med sporskiftestangen får sporskiftedrevet fat igen, og OCC har igen kontrol med skifte 102.", status: "Afsluttet" },
+                    { date: "03-02-2026", type: "Der bliver meldt fejl fra skab D3 på CMC", category: "Signalanlæg", desc: "Der var opstået fejl fra skab D3 på CMC 3-4 gange fra ca. kl 7:30", action: "Bender om at tjekke om I/O modulerne er trykket ordeligt sammen. Problemet forsvinder her efter", status: "Afsluttet" },
+                    { date: "02-02-2026", type: "PLC i D1 på CMC går i stop hvert 30. min", category: "Signalanlæg", desc: "PLC'en i D1 går i stop hvert 30. min", action: "I forlængelse at problemet fra natten før, viser det sig at PLC'en går i stop hvert 30. min hvis temperaturen i skabet måles til under 0 grader. Varmelegmet i skabet var defekt og er nu blevet skiftet.", status: "Afsluttet" },
+                    { date: "01-02-2026", type: "Der er byttet rundt på de 2 PID-skærme i Ishøj", category: "CCTV", desc: "Der er byttet rundt på de 2 PID-skærme i Ishøj", action: "Jeg sagde til dem, at det kunne jeg nok ikke gøre noget ved, men jeg tilbød alligevel at genstarte north- og southbound.", status: "Ikke afsluttet" },
+                    { date: "26-01-2026", type: "VMS/CCTV hakker , fryser og falder ud på diverse stationer", category: "CCTV", desc: "OCC har problemer med CCTV på diverse stationer. Mange kameraer står med hvid skærm (forbindelsesfejl - fejl 21656)", action: "Først kontaktet Codeex - de mener ikke at have problemer og henviser til Cognify support. Kontaktet Siemens BuildingTech", status: "Ikke afsluttet" },
+                    { date: "25-01-2026", type: "VMS/CCTV hakker , fryser og falder ud på diverse stationer", category: "CCTV", desc: "OCC har problemer med CCTV på diverse stationer. Mange kameraer står med hvid skærm (forbindelsesfejl - fejl 21656)", action: "Først kontaktet Codeex - de mener ikke at have problemer og henviser til Cognify support. Kontaktet Siemens BuildingTech", status: "Ikke afsluttet" },
+                    { date: "25-01-2026", type: "workstation 3 opfører sig underligt", category: "Workstation", desc: "IVU åbner ikke som det skal og en af skærmene flimre.", action: "Det viser sig at der er blevet tilføjet en ekstra skærm til alle workstations. Vi piller den nye ekstra skærm fra og alt virker som det plejer.", status: "Afsluttet" },
+                    { date: "25-01-2026", type: "Flere PID displays står med ?-tegn/IP-text", category: "Program", desc: "Flere PID displays står med ?-tegn/IP-text. Det er meget tilfældigt hvilke skærme der virker", action: "Kontakter først Codeex der mener at de har hul igennem til deres del. Får derefter fat i IVU der genstarter en service, men det hjælper ikke.", status: "Afventer" },
+                    { date: "25-01-2026", type: "PDU i serverrummet", category: "Netværk", desc: "PDU'en trækker ikke noget strøm ud til sine komponenter", action: "Beder Codeex om at genstarte PDU'en", status: "Afsluttet" },
+                    { date: "24-11-2025", type: "Besættesle ved Entry/Exit", category: "Hardware", desc: "Kan ikke sætte togeveje ved Entry/Exit bliver besat med det samme igen når der resættes i skabet.", action: "Masterreset af PLC", status: "Afsluttet" },
+                    { date: "24-11-2025", type: "Sporskife vramer ikke på Glostrup", category: "SPSKvarme", desc: "Fejl på SM9 i sporskiftevarme-skab", action: "Fejlen blev fundet tidligere på dangen, muligt defekt varmelegeme som der bliver arbejdet på at få fikset.", status: "Afventer" },
+                    { date: "24-11-2025", type: "IXL signaler stå og blinker på Entry/Exit", category: "RRM", desc: "IXL signaler stå og blinker på Entry/Exit", action: "Beder OCC om at gå ned og resætte i skabet", status: "Afsluttet" },
+                    { date: "23-11-2025", type: "IXL (RRM) er frosset", category: "RRM", desc: "IXL (RRM) er frosset", action: "RRM_service genstartet.", status: "Afsluttet" },
+                    { date: "23-11-2025", type: "Fejl på Entry/Exit", category: "Hardware", desc: "Sporisol \"fra nord\" er kunstigbesat. Sidste modul i A12-rækken blinker fejl. Samme fejl som 20/11 og 22/11.", action: "Bad Metroservice om at kontrollere DEWEMO, der er et spsk der ikke er i kontrol. Jeg bad dem om at kontrollere skifterne fysisk.", status: "Afsluttet" },
+                    { date: "23-11-2025", type: "Fejl på Entry/exit.", category: "Hardware", desc: "Sporisol \"fra nord\" er kunstigbesat. Sidste modul i A12-rækken blinker fejl. Samme fejl som 20/11.", action: "Jeg kan ikke finde reservedel, så jeg kører til Lundtofte og låner et modul dèr.", status: "Afsluttet" },
+                    { date: "22-11-2025", type: "Fejl på Entry/exit.", category: "Hardware", desc: "Sporisol \"fra nord\" er kunstigbesat. Sidste modul i A12-rækken blinker fejl. Samme fejl som 20/11.", action: "Jeg fik instrueret Metroservice i at tage strømmen fra modulet, derefter reset. Aftalte at næste gang vil jeg skifte modulet.", status: "Afsluttet" },
+                    { date: "21-11-2025", type: "Fejl på Entry/exit.", category: "Hardware", desc: "Sporisol \"fra nord\" er kunstigbesat. Sidste modul i A12-rækken blinker fejl. Samme fejl som 20/11.", action: "Jeg fik instrueret Metroservice i at tage strømmen fra modulet, derefter reset", status: "Afsluttet" },
+                    { date: "21-11-2025", type: "OCC kan ikke give live udkal til flere stationer", category: "Lydanlæg", desc: "OCC kan ikke give live udkal til flere stationer", action: "Melder til IHM og de tager hånd om det.", status: "??" },
+                    { date: "21-11-2025", type: "Snebold lyser ikke i Strandhaven", category: "ITS", desc: "Snebolden er ustabil, slukker periodisk", action: "Togene registreres fin af radar, men der kommer ikke kvittering herfor i snebolden", status: "Afsluttet" },                    { date: "19-11-2025", time: "06:20", type: "Problem på WS3: Når SCADA betjenes, lukker den den og sitras skal startes igen", category: "Program", desc: "Problem på WS3: Når SCADA betjenes, lukker den den og sitras skal startes igen", action: "Det forlyder i første omgang, at det kun er ws3 der opfører sig sådan. Det viser sig dog at være alle. Der er overensstemmelse imellem IXL og der jeg observere.", status: "Afsluttet" },
+                    { date: "17-11-2025", time: "08:00", type: "IXL/RRM grå på Entry/Exit", category: "Program", desc: "Efter en lokal strømafbrydelse er IXL/RRM blevet grå på EE. På de andre stationer er alt ok.", action: "Logger ind på IXL/RRM server via Jumphost og genstarter RRM-service. Derefter alt ok", status: "Afsluttet" },
+                    { date: "17-11-2025", time: "10:00", type: "Højttalere i GLj virker ikke", category: "Netværk", desc: "Det fremgår af SCADAbillede, at callpoint og CCTV også er faldet ud. Senere kommer der problemer med at kalde togene på radio på hele strækningen.", action: "Kontakter Codeex, der kan se at det tidligere problem med den centrale firewall er kommet igen. De foreslår genstart af firewall kl 01:00", status: "Afsluttet" },
+                    { date: "16-11-2025", time: "18:04", type: "OCC melder VMS-applikation virker ikke efter den \"daglige planlagte\" reboot", category: "Program", desc: "OCC melder VMS-applikation virker ikke efter den \"daglige planlagte\" reboot", action: "Under samtale med OCC meldes der ud at VMS appl kommer op og køre (kl 18.06 ca)", status: "Afsluttet" },
+                    { date: "16-11-2025", time: "08:30", type: "Entry/Exit blinker rødt - hjælper ikke at udføre reset", category: "Program", desc: "OCC kan ikke bruge IXL/RRM på Entry/Exit - alt blinker rødt", action: "Kørt on-site, PLC-Failsafe-IO modul A12-A21.12 (E1116.0-7) er rødt. Powercycle og efterfølgende reset via Grøn + Rød + Nøgle. Derefter alt ok.", status: "Afsluttet" },
+                    { date: "13-11-2025", time: "13:30", type: "Signaler blinker rødt bagerst på CMC", category: "Hardware", desc: "På IXL ses at alt blinker rødt bagerst på CMC område. Har prøvet at udføre reset på knapper/nøgle uden succes.", action: "Kim kører on-site, og observerer I det lokale interlocking skab , at et enkelt Failsafe-PLC IO-modul står med rødt. Kim powercycler hele den pågældende PLC-node", status: "Afsluttet" },
+                    { date: "13-11-2025", time: "08:45", type: "RRM er gået I stå", category: "Program", desc: "Alle RRM/IXL billeder er grå", action: "Genstartet RRM-Service, derefter ok.", status: "Afsluttet" },
+                    { date: "13-11-2025", time: "07:35", type: "RVM på RødovreNord mangler Internet-forbindelse", category: "Netværk", desc: "RVM (Rejsekort maskine) har power, men ingen net-forb", action: "Kontaktet Codeex som kan se at port for RVM på netværks-switch på RødovreNord var lukket/blokeret. Codeex åbner port I switch - derefter alt ok", status: "Afsluttet" },
+                    { date: "11-11-2025", time: "16:15", type: "RRM er grå og død i Entry/Exit", category: "Program", desc: "RRM/IXL er grå I EE. De andre steder kører alt", action: "RRM-service genstartet. Derefter alt ok", status: "Afsluttet" },
+                    { date: "10-11-2025", time: "11:50", type: "PID displays står med ?-tegn", category: "Program", desc: "Mange PID-displays står med \"?\" istedet for minut-tal.", action: "Under fejlsøgning observeres det at det \"kun\" drejer sig om alle PID-displays på den SYDGÅENDE strækning. Kontaktes IVU-Tyskland som genstarter en Service.", status: "Afsluttet" },
+                    { date: "09-11-2025", time: "07:15", type: "Hardware", category: "Hardware", desc: "Hele Entry/Exit blinker rødt", action: "Node A31.0-12(21?) er helt slukket. Det viser sig, at output 4 på F32 (SITOP 1200) er afbrudt (fast rød LED). Jeg tager sikring F31 der tager strømmen til F32, derefter ok.", status: "Afsluttet" },
+                    { date: "07-11-2025", time: "14:30", type: "Lyskurv ude at trit med virkligheden", category: "Hardware", desc: "Lyskurv kører i ring. Stop - snebold - gul - grøn og så forfra", action: "Glas sikring ud og ind igen, eferfølgende var alt normalt igen.", status: "Afsluttet" },
+                    { date: "06-11-2025", time: "15:00", type: "Skærm blinker på plads 3", category: "Hardware", desc: "Skærm blinker", action: "Ny skærm monteret", status: "Afsluttet" },
+                    { date: "06-11-2025", time: "14:30", type: "Dårlig lyd OOC bord 2", category: "Hardware", desc: "Det skratter stadig.", action: "Nyt USB kabel monteret mellem Svanehals mikrofon og PC.", status: "Afsluttet" },
+                    { date: "06-11-2025", time: "12:35", type: "RRM er gået i stå", category: "Program", desc: "CMC EE havde mistet forbindelsen", action: "RRM service blev genstartet.", status: "Afsluttet" },
+                    { date: "04-11-2025", time: "14:00", type: "Dårlig lyd, og ingen lyd på plads 3 og 4 i OCC", category: "Hardware", desc: "Svanehals mikrofon på plads 2 skratter ved tale ude i tog, og på plads 3 virker den slet ikke.", action: "På plads 3 var højtaler slet ikke sat til stikket til højtaler. Satte stik i PC, og alt var godt. På plads 2 var tale ud til tog meget ringe.", status: "Afsluttet" },
+                    { date: "03-11-2025", time: "22:35", type: "RRM er gået i stå", category: "Program", desc: "IXL billeder er grå", action: "RRM service blev genstartet.", status: "Afsluttet" },
+                    { date: "03-11-2025", time: "12:35", type: "RRM er gået i stå", category: "Program", desc: "IXL billeder er grå", action: "RRM service blev genstartet.", status: "Afsluttet" },
+                    { date: "03-11-2025", time: "00:35", type: "RRM er gået i stå", category: "Program", desc: "IXL billeder er grå", action: "RRM service blev genstartet.", status: "Afsluttet" },
+                    { date: "02-11-2025", time: "23:29", type: "RRM er gået i stå", category: "Program", desc: "IXL billeder er grå", action: "RRM service blev genstartet.", status: "Afsluttet" },
+                    { date: "30-10-2025", time: "22:54", type: "RRM er gået i stå", category: "Program", desc: "IXL billeder er grå", action: "RRM service blev genstartet.", status: "Afsluttet" },
+                    { date: "29-10-2025", time: "07:39", type: "RRM er gået i stå", category: "Program", desc: "IXL billeder er grå", action: "RRM service blev genstartet.", status: "Afsluttet" },
+                    { date: "29-10-2025", time: "05:30", type: "RRM er gået i stå", category: "Program", desc: "IXL billeder er grå", action: "RRM service blev genstartet.", status: "Afsluttet" },
+                    { date: "28-10-2025", time: "02:14", type: "Tog", category: "Tog", desc: "Tog er strandet i vaskehal", action: "OCC ringer til tog service", status: "Afsluttet" },
+                    { date: "27-10-2025", time: "14:36", type: "RRM er gået i stå", category: "Program", desc: "IXL billeder er grå", action: "RRM service blev genstartet.", status: "Afsluttet" },
+                    { date: "27-10-2025", time: "13:07", type: "RRM er gået i stå", category: "Program", desc: "IXL billeder er grå", action: "RRM service blev genstartet.", status: "Afsluttet" },
+                    { date: "27-10-2025", time: "10:22", type: "Snebold ved indkørsel mod nord på Ejby industrivej.", category: "Signal", desc: "Snebolden er ustabil, slukker periodisk", action: "Michael Thygesen tjekker PLC loggen for fejl. Der er ikke fejl, men grøn bliver aktiveret 2 gange.", status: "Afsluttet" },
+                    { date: "26-10-2025", time: "16:30", type: "RRM er grå på Glostrup", category: "RRM", desc: "RRM er grå på Glostrup", action: "RRM genstart", status: "Afsluttet" },
+                    { date: "24-10-2025", time: "09:50", type: "Intet virker (IXL, radioer arbejdsstationer)", category: "Netværk", desc: "Jeg kan ikke logge på fjernt fra", action: "Netværksfejl meldt videre til Codeex der har det oppe igen meget ca. kl 11", status: "Afsluttet" },
+                    { date: "24-10-2025", time: "07:54", type: "Meget dårlig lydkvalitet på radio til LRV", category: "Radio", desc: "Meget dårlig lydkvalitet på radio til LRV", action: "", status: "Givet videre til IHM" },
+                    { date: "24-10-2025", time: "06:50", type: "IXL, Glostrup og CMC2 er gråt og dødt", category: "Program", desc: "RRM viser ingen indikeringer, alt er gråt og dødt", action: "RRM stop og start", status: "Afsluttet" },
+                    { date: "22-10-2025", time: "08:13", type: "RRM viser ingen indikeringer, alt er gråt og dødt", category: "Program", desc: "RRM viser ingen indikeringer, alt er gråt og dødt", action: "RRM stop og start", status: "Afsluttet" },
+                    { date: "21-10-2025", time: "23:13", type: "IXL, alt er gråt og dødt", category: "Program", desc: "RRM viser ingen indikeringer, alt er gråt og dødt", action: "RRM stop og start", status: "Afsluttet" },
+                    { date: "21-10-2025", time: "00:15", type: "Forrige fejl kom igen, TC14 og 16 er konstant besat", category: "Track circuit", desc: "TC16 er rød og TC14 (sporskifte) er rød i den \"skiftende del\" af skiftet", action: "Jeg lavede en autoset at TC16 i stedet, derefter iorden.", status: "Afsluttet" },
+                    { date: "20-10-2025", time: "21:20", type: "TC14 og 16 er konstant besat", category: "Track circuit", desc: "TC16 er rød og TC14 (sporskifte) er rød i den \"skiftende del\" af skiftet", action: "TC16 går iorden efter at gå ind i Service menuen og ud igen. TC14, vi prøver at omstille skiftet med stang. Laver nøglereset i IXL-skabet og det går iorden.", status: "Afsluttet" },
+                    { date: "19-10-2025", time: "17:28", type: "Nøgle til togvej virker ikke.", category: "Program", desc: "Tog 127 (driftnr 3). Udkørsel fra Ishøj spor 2 mod nord får ikke automatisk togvej, pga fejl I plandata.", action: "De fortager en forbikørsel og rydder op bagefter.", status: "Afsluttet" },
+                    { date: "18-10-2025", time: "18:38", type: "Falsk besættelse Entry/Exit", category: "Track circuit", desc: "Falsk besættelse Entry/Exit", action: "Reset af Tracon + nøgle reset. Tracon EETC02-E15 melder besat. Service-menu + exit. Melder hurtigt OK/ledig.", status: "Afsluttet" },
+                    { date: "18-10-2025", time: "15:55", type: "Falsk besættelse GL", category: "Track circuit", desc: "Isolation nordgående ved indkørsel til Gl.", action: "Reset af Tracon + nøgle reset. Tracon G2TC16-A17 melder besat. Service-menu + exit. Efter lang blinkeperiode, melder modul OK/Ledig.", status: "Afsluttet" },
+                    { date: "17-10-2025", time: "16:35", type: "IXL frozen - 2 gange", category: "Program", desc: "IXL frozen - 2 gange", action: "", status: "Afsluttet" },
+                    { date: "17-10-2025", time: "13:35", type: "CMC blinker", category: "Netværk", desc: "Netværks-fejl ?", action: "Fysisk reset i skab", status: "Afsluttet" },
+                    { date: "17-10-2025", time: "06:00", type: "Glostrup sporskifte (Kim tog sig af dette)", category: "Netværk", desc: "Netværks-fejl", action: "Fysisk reset i skab", status: "Afsluttet" },
+                    { date: "16-10-2025", time: "08:25", type: "IXL frozen", category: "Program", desc: "IXL frozen", action: "", status: "Afslutttet" },
+                    { date: "16-10-2025", time: "01:25", type: "KAn ikke bruge applikationer, IVU planner etc", category: "Netværk", desc: "Codeex kører komplet netværks-opdatering - de ønsker at jeg udfører powercycle på Cisco-switch (CMC-Entry/Exit)", action: "", status: "Afsluttet" },
+                    { date: "15-10-2025", time: "00:15", type: "Glostrup", category: "Signalanlæg", desc: "Glostrup - alt blinker rødt - OCC har sendt folk ud og forsøge reset i skab uden held", action: "I skab på bakken - PLC-modul (F-DI A24-A41.7) blinker rødt", status: "Afsluttet" },
+                    { date: "13-10-2025", time: "20:30", type: "Radiolyd dårlig", category: "Netværk", desc: "Radiolyd med tog-førere dårlig.", action: "Det viser sig at Codeex arbejder med netværket, Firewall", status: "Afsluttet" },
+                    { date: "13-10-2025", time: "18:45", type: "IXL", category: "Program", desc: "IXL grå i CMC - men ikke andre steder", action: "IXL service genstart - derefter ok", status: "Afsluttet" },
+                    { date: "10-10-2025", time: "23:00", type: "Tracon", category: "Track circut", desc: "Fejl på E15 på entry/exit", action: "Restart af Tracon Modul + nøgle reset", status: "Afsluttet" },
+                    { date: "10-10-2025", time: "18:30", type: "Tracon", category: "Track circut", desc: "Fejl på A17(Bakke) på Glostrup", action: "Restart af Tracon Modul + nøgle reset", status: "Afsluttet" },
+                    { date: "10-10-2025", time: "16:50", type: "RRM", category: "Program", desc: "HELE CMC viser gråt men RRM kører stadig og virker fint på resten af banen", action: "Blev fixet ved at genstarte RRM", status: "Afsluttet" },
+                    { date: "10-10-2025", time: "15:50", type: "RRM", category: "Program", desc: "HELE Glostup viser gråt men RRM kører stadig og virker fint på resten af banen", action: "Blev fixet ved at genstarte RRM", status: "Afsluttet" },
+                    { date: "10-10-2025", time: "15:10", type: "IHM", category: "Program", desc: "Efter updatering af en server firewall begynder al lyd-kommunikation at skratte, både mellem OCC og togene, samt internt hos OCC.", action: "Fik Codeex til at rulle deres opdatering tilbage, og alt lød fint igen", status: "Afsluttet" },
+                    { date: "08-10-2025", time: "22:15", type: "Video Management System (VMS)", category: "Program", desc: "VMS er stoppet så alt CCTV virkede ikke", action: "VMS_CORE Service blev genstartet med IP-adressen for Master CCTV men stoppede igen med det samme. Den blev givet videre til Codeex", status: "Ikke afsluttet" },
+                    { date: "08-10-2025", time: "15:20", type: "Video Management System (VMS)", category: "Program", desc: "VMS er stoppet så alt CCTV virkede ikke", action: "VMS_CORE Service blev genstartet ved at logge in med IP-adressen for Master CCTV", status: "Afsluttet" },
+                    { date: "08-10-2025", time: "09:15", type: "Video Management System (VMS)", category: "Program", desc: "VMS er stoppet så alt CCTV virkede ikke", action: "VMS_CORE Service blev genstartet ved at logge in med IP-adressen for Master CCTV", status: "Afsluttet" },
+                    { date: "07-10-2025", time: "09:00", type: "Fejl på storskifte G1EP04", category: "Track circit", desc: "Sporskifte viser en stilling, men burde stå i en anden. Der har muligvis være en ude og manuelt stille på sporskiftet.", action: "Kørte manuelt med porskiftet så det kom tilbage i sin orginale stilling.", status: "Afsluttet" },
+                    { date: "06-10-2025", time: "23:15", type: "GL2TC16 i Glostrup Lyser rødt i RRM.", category: "Track circut", desc: "Trackcircuit TC16 i Glostrup melder besat i utide.", action: "TRACON modulet resættet, der kommer godt nok en \"err 1200\" men alt virker fint der kan sættest en togvej igen", status: "Afsluttet" },
+                    { date: "06-10-2025", time: "18:15", type: "Video Management System (VMS)", category: "Program", desc: "VMS er stoppet så alt CCTV virkede ikke", action: "VMS_CORE Service blev genstartet ved at logge in med IP-adressen for Master CCTV", status: "Afsluttet" },
+                    { date: "06-10-2025", time: "03:35", type: "RRM", category: "Program", desc: "RRM er stoppet", action: "RRM Sevice blev genstartet.", status: "Afsluttet" },
+                    { date: "05-10-2025", time: "11:14", type: "Flere fejl på GL", category: "Netværk", desc: "GL2TC18 viser besat. 2 signaler blinker rødt.", action: "Da vi ankom til Glostrup var der ingen fejl at se. GL2 blev reset med nøgle.", status: "Afsluttet" },
+                    { date: "04-10-2025", time: "11:59", type: "RRM", category: "Program", desc: "RRM er stoppet", action: "RRM Sevice blev genstartet.", status: "Afsluttet" },
+                    { date: "04-10-2025", time: "09:49", type: "ISTC08", category: "Trackcircuit", desc: "Trackcircuit TC08 viser besat konstant.", action: "TRACON modul TC08 er slukket. Det viste sig at TRACON kunne resettes. Derefter virker det igen.", status: "Afsluttet" },
+                    { date: "03-10-2025", time: "08:46", type: "OCC", category: "Netværk", desc: "Betjeningspladser i OCC falder ud.", action: "Fejlmeldt til Codeex. De kunne se at der har været udfald på den Gateway. Fejlen forsvandt af sig selv.", status: "Afsluttet" },
+                    { date: "02-10-2025", time: "13:19", type: "OCC", category: "Netværk", desc: "Forbindelsen kommer og går med sekunders mellemrum.", action: "Netværket blev fejlmeldt til Codeex. Fejlen blev rettet af Codeex. Efterfølgende skulle RRM servicen genstartes.", status: "Afsluttet" },
+                    { date: "01-10-2025", time: "08:23", type: "GL2TC16 i Glostrup Lyser rødt i RRM.", category: "Trackcircuit", desc: "Trackcircuit TC16 i Glostrup melder besat i utide.", action: "Ved ankomst lyser TC lampen fast rødt. TRACON resettes flere gange. Forbindelser i sporet spændes efter. I en overstropning mellem 2 skinner skiftes bolten.", status: "Afsluttet" },                ];
+                // Sorter efter dato (nyeste først)
+                this.errors.sort((a, b) => {
+                    if (!a.date || !b.date) return 0;
+                    const dateA = new Date(a.date.split('-').reverse().join('-'));
+                    const dateB = new Date(b.date.split('-').reverse().join('-'));
+                    return dateB - dateA;
+                });
+                this.filteredErrors = [...this.errors];
+            },
+
+            setupEventListeners() {
+                document.getElementById('searchInput').addEventListener('input', (e) => {
+                    this.search(e.target.value);
+                });
+            },
+
+            search(query) {
+                const q = query.toLowerCase().trim();
+                if (q === '') {
+                    this.filteredErrors = [...this.errors];
+                } else {
+                    this.filteredErrors = this.errors.filter(e => 
+                        e.type.toLowerCase().includes(q) ||
+                        e.desc.toLowerCase().includes(q) ||
+                        e.category.toLowerCase().includes(q) ||
+                        e.action.toLowerCase().includes(q)
+                    );
+                }
+                this.render();
+            },
+
+            render() {
+                const errorList = document.getElementById('errorList');
+                const emptyState = document.getElementById('emptyState');
+                const resultCount = document.getElementById('resultCount');
+
+                resultCount.textContent = this.filteredErrors.length;
+
+                if (this.filteredErrors.length === 0) {
+                    errorList.innerHTML = '';
+                    emptyState.style.display = 'block';
+                } else {
+                    emptyState.style.display = 'none';
+                    errorList.innerHTML = this.filteredErrors.map((error, index) => `
+                        <div class="error-item" onclick="app.showDetail(${index})">
+                            <div class="error-type">🔧 ${error.type}</div>
+                            <div class="error-desc">${error.desc.substring(0, 80)}${error.desc.length > 80 ? '...' : ''}</div>
+                            <div>
+                                <span class="error-category">${error.category}</span>
+                                ${error.status ? `<span class="status-badge ${error.status.toLowerCase().replace(/[\s-]/g, '')}">${error.status}</span>` : ''}
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            },
+
+            showDetail(index) {
+                this.currentDetail = this.filteredErrors[index];
+                const detailContent = document.getElementById('detailContent');
+                const error = this.currentDetail;
+
+                const maintenanceAction = error.action || 'Ingen action registreret';
+                const description = error.desc || 'Ingen beskrivelse';
+                const status = error.status || 'No status';
+                const dateTime = `${error.date || '-'} kl. ${error.time || '-'}`;
+
+                detailContent.innerHTML = `
+                    <div class="detail-header">
+                        <div class="detail-title">🔧 ${error.type}</div>
+                        <span class="detail-category">${error.category}</span>
+                        <div style="font-size: 12px; margin-top: 10px; color: #666; font-weight: 500;">📅 ${dateTime}</div>
+                    </div>
+
+                    <div class="detail-section">
+                        <div class="detail-section-title">📝 Fejlbeskrivelse</div>
+                        <div class="detail-content">${description}</div>
+                    </div>
+
+                    <div class="detail-section">
+                        <div class="detail-section-title">🛠️ Maintenance Action</div>
+                        <div class="detail-content">${maintenanceAction}</div>
+                    </div>
+
+                    <div class="detail-section">
+                        <div class="detail-section-title">✅ Status</div>
+                        <div class="detail-content">${status}</div>
+                    </div>
+
+                    <div class="detail-section">
+                        <div class="detail-section-title">ℹ️ Kategori</div>
+                        <div class="detail-content">${error.category}</div>
+                    </div>
+                `;
+
+                document.getElementById('listView').classList.remove('active');
+                document.getElementById('detailView').classList.add('active');
+                document.getElementById('searchInput').value = '';
+            },
+
+            backToList() {
+                document.getElementById('detailView').classList.remove('active');
+                document.getElementById('listView').classList.add('active');
+                document.getElementById('searchInput').value = '';
+                document.getElementById('searchInput').focus();
+            }
+        };
+
+        // Initialize app when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => app.init());
+    </script>
+</body>
+</html>
